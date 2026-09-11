@@ -18,7 +18,7 @@ export type Certificate = {
   level: string;
 };
 
-const DATA_DIR = path.resolve(process.cwd(), "data");
+const DATA_DIR = process.env.NODE_ENV === "production" ? "/tmp/certificates" : path.resolve(process.cwd(), "data");
 const DATA_FILE = path.join(DATA_DIR, "certificates.json");
 
 const SEED_CERTIFICATES: Certificate[] = [
