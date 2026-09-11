@@ -1,48 +1,7 @@
-import { useState } from "react";
-import { z } from "zod";
-import { toast } from "sonner";
 import { Reveal } from "@/components/Reveal";
 import { site } from "@/lib/site";
 
-const schema = z.object({
-  name: z.string().trim().nonempty({ message: "Please enter your name." }).max(100),
-  email: z.string().trim().email({ message: "Please enter a valid email address." }).max(255),
-  phone: z.string().trim().max(40).optional(),
-  message: z
-    .string()
-    .trim()
-    .nonempty({ message: "Please add a short message." })
-    .max(1000, { message: "Message must be under 1000 characters." }),
-});
-
-type Errors = Partial<Record<"name" | "email" | "phone" | "message", string>>;
-
 export function Contact() {
-  const [values, setValues] = useState({ name: "", email: "", phone: "", message: "" });
-  const [errors, setErrors] = useState<Errors>({});
-
-  const set = (key: keyof typeof values) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-    setValues((v) => ({ ...v, [key]: e.target.value }));
-
-  const onSubmit = (event: React.FormEvent) => {
-    event.preventDefault();
-    const parsed = schema.safeParse(values);
-    if (!parsed.success) {
-      const flat = parsed.error.flatten().fieldErrors;
-      setErrors({
-        name: flat.name?.[0],
-        email: flat.email?.[0],
-        phone: flat.phone?.[0],
-        message: flat.message?.[0],
-      });
-      return;
-    }
-    setErrors({});
-    setValues({ name: "", email: "", phone: "", message: "" });
-    toast.success("Thank you — your inquiry has been noted.", {
-      description: "This form is not yet connected to the studio inbox.",
-    });
-  };
 
   return (
     <section id="contact" className="border-t border-border py-24 md:py-32">
@@ -58,7 +17,7 @@ export function Contact() {
         </Reveal>
 
         <div className="mt-16 grid gap-14 lg:grid-cols-12 lg:gap-20">
-          <Reveal className="lg:col-span-5">
+          <Reveal className="lg:col-span-6">
             <dl className="grid gap-8 sm:grid-cols-2 lg:grid-cols-1">
               <div>
                 <dt className="label-xs text-ink/50">Address</dt>
@@ -124,103 +83,8 @@ export function Contact() {
               />
             </div>
           </Reveal>
-
-          <Reveal delay={140} className="lg:col-span-6 lg:col-start-7">
-            <form onSubmit={onSubmit} noValidate className="grid gap-7">
-              <Field
-                id="contact-name"
-                label="Name"
-                value={values.name}
-                onChange={set("name")}
-                error={errors.name}
-              />
-              <Field
-                id="contact-email"
-                label="Email"
-                type="email"
-                value={values.email}
-                onChange={set("email")}
-                error={errors.email}
-              />
-              <Field
-                id="contact-phone"
-                label="Phone (optional)"
-                type="tel"
-                value={values.phone}
-                onChange={set("phone")}
-                error={errors.phone}
-              />
-              <div>
-                <label htmlFor="contact-message" className="label-xs text-ink/70">
-                  Message
-                </label>
-                <textarea
-                  id="contact-message"
-                  name="message"
-                  rows={4}
-                  maxLength={1000}
-                  value={values.message}
-                  onChange={set("message")}
-                  aria-invalid={Boolean(errors.message)}
-                  aria-describedby={errors.message ? "contact-message-error" : undefined}
-                  className="mt-3 w-full resize-none border-b border-border bg-transparent pb-3 text-ink outline-none transition-colors focus:border-plum"
-                />
-                {errors.message && (
-                  <p id="contact-message-error" className="mt-2 text-sm text-destructive">
-                    {errors.message}
-                  </p>
-                )}
-              </div>
-              <button
-                type="submit"
-                className="label-xs justify-self-start border border-plum bg-plum px-8 py-4 text-primary-foreground transition-colors duration-300 hover:bg-ink"
-              >
-                Send Inquiry
-              </button>
-            </form>
-          </Reveal>
         </div>
       </div>
     </section>
-  );
-}
-
-function Field({
-  id,
-  label,
-  value,
-  onChange,
-  error,
-  type = "text",
-}: {
-  id: string;
-  label: string;
-  value: string;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  error?: string;
-  type?: string;
-}) {
-  return (
-    <div>
-      <label htmlFor={id} className="label-xs text-ink/70">
-        {label}
-      </label>
-      <input
-        id={id}
-        name={id}
-        type={type}
-        value={value}
-        onChange={onChange}
-        maxLength={255}
-        aria-invalid={Boolean(error)}
-        aria-describedby={error ? `${id}-error` : undefined}
-        className="mt-3 w-full border-b border-border bg-transparent pb-3 text-ink outline-none transition-colors focus:border-plum"
-      />
-      {error && (
-        <p id={`${id}-error`} className="mt-2 text-sm text-destructive">
-          {error}
-        </p>
-      )}
-    </div>
   );
 }
