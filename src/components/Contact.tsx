@@ -112,10 +112,15 @@ export function Contact() {
 
             <div className="mt-10 border border-border">
               <iframe
-                title={`Map showing ${site.name} in ${site.city}`}
-                src="https://www.openstreetmap.org/export/embed.html?bbox=-9.1500%2C38.7050%2C-9.1300%2C38.7180&layer=mapnik"
+                title={`Map showing ${site.name}`}
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3415.3818777482693!2d76.11336277482613!3d31.12690777439647!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x391abdc6bda26a9d%3A0x77eb097cb9b2201e!2sBake%20House!5e0!3m2!1sen!2sin!4v1789118549652!5m2!1sen!2sin"
+                width="100%"
+                height="300"
+                style={{ border: 0 }}
+                allowFullScreen={true}
                 loading="lazy"
-                className="h-64 w-full grayscale"
+                referrerPolicy="strict-origin-when-cross-origin"
+                className="w-full"
               />
             </div>
           </Reveal>
