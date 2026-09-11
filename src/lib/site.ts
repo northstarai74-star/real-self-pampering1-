@@ -2,7 +2,7 @@ export const site = {
   name: "Self Pampering",
   tagline: "Nail Atelier",
   handle: "@selfpampering",
-  city: "Lisbon",
+  city: "Nawanshahr",
   address: ["Arya Samaj road near bake house"],
   phone: "8360082118",
   email: "Rashmivij1996@gamil.com",
