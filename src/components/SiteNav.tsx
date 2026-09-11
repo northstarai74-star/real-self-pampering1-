@@ -68,6 +68,12 @@ export function SiteNav() {
 
         <div className="flex items-center gap-3">
           <a
+            href="/admin"
+            className="label-xs hidden border border-gold bg-gold px-4 py-3 text-ink transition-colors duration-300 hover:bg-plum hover:text-primary-foreground md:inline-block md:px-6"
+          >
+            Admin
+          </a>
+          <a
             href="#verify"
             className="label-xs border border-plum bg-plum px-4 py-3 text-primary-foreground transition-colors duration-300 hover:bg-ink md:px-6"
           >
@@ -93,6 +99,13 @@ export function SiteNav() {
             </button>
           </div>
           <nav className="flex flex-col px-5 pt-6 md:px-10" aria-label="Mobile">
+            <a
+              href="/admin"
+              onClick={() => setOpen(false)}
+              className="border-b border-gold bg-gold/10 py-5 font-display text-2xl text-gold"
+            >
+              Admin
+            </a>
             {links.map((l) => (
               <a
                 key={l.href}
