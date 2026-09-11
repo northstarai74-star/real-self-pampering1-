@@ -3,17 +3,16 @@ export const site = {
   tagline: "Nail Atelier",
   handle: "@selfpampering",
   city: "Lisbon",
-  // PLACEHOLDER contact details — replace with the studio's real information.
-  address: ["Rua das Flores 128, 2nd Floor", "1200-195 Lisbon, Portugal"],
-  phone: "+351 210 000 128",
-  email: "studio@selfpampering.example",
+  address: ["Arya Samaj road near bake house"],
+  phone: "8360082118",
+  email: "Rashmivij1996@gamil.com",
   hours: [
     { days: "Tuesday — Friday", time: "10:00 — 19:00" },
     { days: "Saturday", time: "10:00 — 17:00" },
     { days: "Sunday — Monday", time: "Closed" },
   ],
   socials: [
-    { label: "Instagram", href: "https://instagram.com" },
+    { label: "Instagram", href: "https://instagram.com/selfpampering2022" },
     { label: "Pinterest", href: "https://pinterest.com" },
     { label: "TikTok", href: "https://tiktok.com" },
   ],
@@ -21,46 +20,22 @@ export const site = {
 
 export const services = [
   {
-    name: "Manicure",
-    description: "Shaping, cuticle care and a polished natural finish.",
-    price: "From ₹3,500",
-    duration: "45 min",
+    name: "Nail Course",
+    description: "Professional nail design and technique training course.",
+    price: "₹25,000",
+    duration: "2 months",
   },
   {
-    name: "Gel Manicure",
-    description: "Long-lasting glossy finish with detailed nail preparation and cuticle care.",
-    price: "From ₹4,800",
-    duration: "60 min",
+    name: "Lashes Course",
+    description: "Complete eyelash extension and application training.",
+    price: "₹25,000",
+    duration: "15 days",
   },
   {
-    name: "Pedicure",
-    description: "Considered foot care, exfoliation and a clean, refined finish.",
-    price: "From ₹4,300",
-    duration: "60 min",
-  },
-  {
-    name: "Nail Art",
-    description: "Hand-painted detail designed around your hands, tone and occasion.",
-    price: "From ₹1,100 / nail",
-    duration: "15 min +",
-  },
-  {
-    name: "Gel Extensions",
-    description: "Structured gel builds for strength, balance and a natural silhouette.",
-    price: "From ₹7,000",
-    duration: "105 min",
-  },
-  {
-    name: "Nail Extensions",
-    description: "Tip or form extensions shaped to the length and profile you prefer.",
-    price: "From ₹6,500",
-    duration: "105 min",
-  },
-  {
-    name: "Custom Nail Design",
-    description: "A private consultation and a design developed exclusively for you.",
-    price: "On request",
-    duration: "By appointment",
+    name: "Makeup Course",
+    description: "Professional makeup artistry and application techniques.",
+    price: "₹20,000",
+    duration: "45 days",
   },
 ];
 
