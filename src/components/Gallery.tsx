@@ -151,20 +151,21 @@ export function Gallery() {
 
         <div className="mt-14 grid gap-4 grid-cols-1 sm:grid-cols-2 md:gap-6 lg:grid-cols-3 xl:grid-cols-4">
           {visible.map((work, i) => (
-            <Reveal key={work.title} delay={(i % 4) * 80} className="overflow-hidden">
+            <Reveal key={work.title} delay={(i % 4) * 80} className="overflow-hidden block">
               <button
                 type="button"
                 onClick={() => setLightbox(work)}
                 className="group relative block w-full overflow-hidden bg-muted text-left"
+                style={{ aspectRatio: `${work.w} / ${work.h}` }}
               >
                 <img
                   src={work.src}
                   alt={work.alt}
                   width={work.w}
                   height={work.h}
-                  loading="lazy"
+                  loading="eager"
                   decoding="async"
-                  className="w-full h-auto transition-transform duration-500 ease-out group-hover:scale-[1.04]"
+                  className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.04]"
                 />
                 <span className="absolute inset-0 bg-plum/0 transition-colors duration-500 group-hover:bg-plum/25" />
                 <span className="absolute inset-x-0 bottom-0 translate-y-3 p-4 opacity-0 transition-all duration-500 group-hover:translate-y-0 group-hover:opacity-100">

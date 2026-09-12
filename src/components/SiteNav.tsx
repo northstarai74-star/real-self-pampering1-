@@ -98,13 +98,13 @@ export function SiteNav() {
               <X className="size-5" strokeWidth={1.25} />
             </button>
           </div>
-          <nav className="flex flex-col px-5 pt-6 md:px-10" aria-label="Mobile">
+          <nav className="flex flex-col px-5 pt-2 md:px-10" aria-label="Mobile">
             <a
               href="/admin"
               onClick={() => setOpen(false)}
-              className="border-b-2 border-gold bg-gold/15 py-5 font-display text-2xl font-bold text-gold hover:bg-gold/25 transition-colors"
+              className="border-b-2 border-gold bg-gold px-4 py-4 font-display text-xl text-ink font-bold hover:bg-plum hover:text-primary-foreground transition-colors"
             >
-              Admin
+              Admin Panel
             </a>
             {links.map((l) => (
               <a
