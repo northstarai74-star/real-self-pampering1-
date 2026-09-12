@@ -149,9 +149,9 @@ export function Gallery() {
           </div>
         </Reveal>
 
-        <div className="mt-14 columns-2 gap-4 md:gap-6 lg:columns-3 xl:columns-4">
+        <div className="mt-14 grid gap-4 grid-cols-1 sm:grid-cols-2 md:gap-6 lg:grid-cols-3 xl:grid-cols-4">
           {visible.map((work, i) => (
-            <Reveal key={work.title} delay={(i % 4) * 80} className="mb-4 break-inside-avoid md:mb-6">
+            <Reveal key={work.title} delay={(i % 4) * 80} className="overflow-hidden">
               <button
                 type="button"
                 onClick={() => setLightbox(work)}
@@ -164,7 +164,7 @@ export function Gallery() {
                   height={work.h}
                   loading="lazy"
                   decoding="async"
-                  className="w-full transition-transform duration-500 ease-out group-hover:scale-[1.04]"
+                  className="w-full h-auto transition-transform duration-500 ease-out group-hover:scale-[1.04]"
                 />
                 <span className="absolute inset-0 bg-plum/0 transition-colors duration-500 group-hover:bg-plum/25" />
                 <span className="absolute inset-x-0 bottom-0 translate-y-3 p-4 opacity-0 transition-all duration-500 group-hover:translate-y-0 group-hover:opacity-100">

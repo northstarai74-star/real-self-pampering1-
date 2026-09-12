@@ -69,7 +69,7 @@ export function SiteNav() {
         <div className="flex items-center gap-3">
           <a
             href="/admin"
-            className="label-xs hidden border border-gold bg-gold px-4 py-3 text-ink transition-colors duration-300 hover:bg-plum hover:text-primary-foreground md:inline-block md:px-6"
+            className="label-xs hidden border border-gold bg-gold px-3 py-2 text-ink transition-colors duration-300 hover:bg-plum hover:text-primary-foreground sm:inline-block sm:px-4 sm:py-3 md:px-6"
           >
             Admin
           </a>
@@ -102,7 +102,7 @@ export function SiteNav() {
             <a
               href="/admin"
               onClick={() => setOpen(false)}
-              className="border-b border-gold bg-gold/10 py-5 font-display text-2xl text-gold"
+              className="border-b-2 border-gold bg-gold/15 py-5 font-display text-2xl font-bold text-gold hover:bg-gold/25 transition-colors"
             >
               Admin
             </a>
