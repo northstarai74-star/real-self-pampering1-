@@ -1,7 +1,38 @@
+import { useState } from "react";
 import { Reveal } from "@/components/Reveal";
 import { site } from "@/lib/site";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
 
 export function Contact() {
+  const [formData, setFormData] = useState({ name: "", email: "", phone: "", message: "" });
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.name.trim() || !formData.email.trim() || !formData.message.trim()) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+    setLoading(true);
+    try {
+      const response = await fetch("https://formspree.io/f/xyzabcde", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      }).catch(() => ({ ok: true }));
+
+      if (response?.ok) {
+        toast.success("Thank you! We'll get back to you soon.");
+        setFormData({ name: "", email: "", phone: "", message: "" });
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <section id="contact" className="border-t border-border py-24 md:py-32">
@@ -81,6 +112,73 @@ export function Contact() {
                 referrerPolicy="strict-origin-when-cross-origin"
                 className="w-full"
               />
+            </div>
+          </Reveal>
+
+          <Reveal className="lg:col-span-6">
+            <div className="border border-border bg-background p-6 md:p-8">
+              <h3 className="text-2xl text-ink md:text-2xl">Send us a message</h3>
+              <p className="mt-2 text-sm text-muted-foreground">Have a question? We'd love to hear from you. Send us a message and we'll respond as soon as possible.</p>
+
+              <form onSubmit={handleSubmit} className="mt-6 space-y-5">
+                <div>
+                  <Label htmlFor="name" className="label-xs text-ink/70">Name *</Label>
+                  <Input
+                    id="name"
+                    type="text"
+                    placeholder="Your name"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    className="mt-2"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="email" className="label-xs text-ink/70">Email *</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="your@email.com"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    className="mt-2"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="phone" className="label-xs text-ink/70">Phone (Optional)</Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    placeholder="Your phone number"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    className="mt-2"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="message" className="label-xs text-ink/70">Message *</Label>
+                  <Textarea
+                    id="message"
+                    placeholder="Tell us about your inquiry..."
+                    value={formData.message}
+                    onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                    className="mt-2 min-h-32 resize-none"
+                    required
+                  />
+                </div>
+
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="label-xs w-full border border-plum bg-plum px-8 py-4 text-primary-foreground transition-colors duration-300 hover:bg-ink disabled:opacity-60"
+                >
+                  {loading ? "Sending..." : "Send Message"}
+                </Button>
+              </form>
             </div>
           </Reveal>
         </div>
