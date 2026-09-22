@@ -69,7 +69,7 @@ export function SiteNav() {
         <div className="flex items-center gap-3">
           <a
             href="/admin"
-            className="label-xs hidden border border-gold bg-gold px-3 py-2 text-ink transition-colors duration-300 hover:bg-plum hover:text-primary-foreground sm:inline-block sm:px-4 sm:py-3 md:px-6"
+            className="label-xs border border-gold bg-gold px-3 py-2 text-ink transition-colors duration-300 hover:bg-plum hover:text-primary-foreground sm:px-4 sm:py-3 md:px-6"
           >
             Admin
           </a>
