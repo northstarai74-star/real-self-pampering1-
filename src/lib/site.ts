@@ -5,9 +5,9 @@ export const site = {
   city: "Nawanshahr",
   address: ["Arya Samaj road near bake house"],
   phone: "8360082118",
-  email: "Rashmivij1996@gamil.com",
+  email: "Rashmivij1996@gmail.com",
   hours: [
-    { days: "Monday — Saturday", time: "10:00 — 20:00" },
+    { days: "Monday — Saturday", time: "9:00 — 19:00" },
     { days: "Sunday", time: "Closed" },
   ],
   socials: [
