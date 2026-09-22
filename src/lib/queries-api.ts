@@ -1,8 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getAdminPassword } from "./admin-auth.server";
 
-const QUERIES_FILE = "queries.json";
-
 interface CustomerQuery {
   id: string;
   name: string;
@@ -12,34 +10,55 @@ interface CustomerQuery {
   date: string;
 }
 
-function getQueriesPath() {
-  return `/tmp/sp-queries.json`;
+// In-memory storage for development/demo
+const queriesStore: Map<string, CustomerQuery[]> = new Map();
+queriesStore.set("queries", []);
+
+function getQueries(): CustomerQuery[] {
+  return queriesStore.get("queries") || [];
 }
 
-function readQueries(): CustomerQuery[] {
+function setQueries(queries: CustomerQuery[]) {
+  queriesStore.set("queries", queries);
+
+  // Also try to persist to file system if available
   try {
-    const fs = require("fs");
-    const path = getQueriesPath();
-    if (fs.existsSync(path)) {
-      const data = fs.readFileSync(path, "utf-8");
-      return JSON.parse(data);
+    if (typeof require !== "undefined") {
+      const fs = require("fs");
+      const path = require("path");
+      const dataDir = path.join(process.cwd(), ".data");
+      if (!fs.existsSync(dataDir)) {
+        fs.mkdirSync(dataDir, { recursive: true });
+      }
+      const filePath = path.join(dataDir, "queries.json");
+      fs.writeFileSync(filePath, JSON.stringify(queries, null, 2));
     }
   } catch (error) {
-    console.error("Error reading queries:", error);
+    console.warn("Could not persist queries to file:", error);
+    // Continue with in-memory storage
   }
-  return [];
 }
 
-function writeQueries(queries: CustomerQuery[]) {
+// Try to load from file system if available
+function loadPersistedQueries() {
   try {
-    const fs = require("fs");
-    const path = getQueriesPath();
-    fs.writeFileSync(path, JSON.stringify(queries, null, 2));
+    if (typeof require !== "undefined") {
+      const fs = require("fs");
+      const path = require("path");
+      const filePath = path.join(process.cwd(), ".data", "queries.json");
+      if (fs.existsSync(filePath)) {
+        const data = fs.readFileSync(filePath, "utf-8");
+        const queries = JSON.parse(data);
+        queriesStore.set("queries", queries);
+      }
+    }
   } catch (error) {
-    console.error("Error writing queries:", error);
-    throw new Error("Failed to save query");
+    console.warn("Could not load persisted queries:", error);
   }
 }
+
+// Load on startup
+loadPersistedQueries();
 
 export const submitCustomerQuery = createServerFn({ method: "POST" })
   .validator((data: unknown) => {
@@ -51,17 +70,18 @@ export const submitCustomerQuery = createServerFn({ method: "POST" })
   })
   .handler(async (data) => {
     try {
-      const queries = readQueries();
+      const queries = getQueries();
       const newQuery: CustomerQuery = {
         id: Date.now().toString(),
-        name: data.name,
-        email: data.email,
-        phone: data.phone || undefined,
-        message: data.message,
+        name: data.name.trim(),
+        email: data.email.trim(),
+        phone: data.phone?.trim() || undefined,
+        message: data.message.trim(),
         date: new Date().toISOString(),
       };
       queries.push(newQuery);
-      writeQueries(queries);
+      setQueries(queries);
+      console.log("Query saved:", newQuery);
       return { ok: true };
     } catch (error) {
       console.error("Error submitting query:", error);
@@ -79,7 +99,7 @@ export const getCustomerQueries = createServerFn({ method: "GET" })
   })
   .handler(async () => {
     try {
-      return readQueries();
+      return getQueries();
     } catch (error) {
       console.error("Error fetching queries:", error);
       return [];
@@ -99,9 +119,9 @@ export const deleteCustomerQuery = createServerFn({ method: "POST" })
   })
   .handler(async (data) => {
     try {
-      const queries = readQueries();
+      const queries = getQueries();
       const filtered = queries.filter((q) => q.id !== data.id);
-      writeQueries(filtered);
+      setQueries(filtered);
       return { ok: true };
     } catch (error) {
       console.error("Error deleting query:", error);
