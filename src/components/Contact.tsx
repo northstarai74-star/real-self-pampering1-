@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { submitCustomerQuery } from "@/lib/queries-api";
 
 export function Contact() {
   const [formData, setFormData] = useState({ name: "", email: "", phone: "", message: "" });
@@ -19,16 +20,16 @@ export function Contact() {
     }
     setLoading(true);
     try {
-      const response = await fetch("https://formspree.io/f/xyzabcde", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      }).catch(() => ({ ok: true }));
-
-      if (response?.ok) {
+      const result = await submitCustomerQuery(formData);
+      if (result.ok) {
         toast.success("Thank you! We'll get back to you soon.");
         setFormData({ name: "", email: "", phone: "", message: "" });
+      } else {
+        toast.error("Failed to send message. Please try again.");
       }
+    } catch (error) {
+      toast.error("Failed to send message. Please try again.");
+      console.error(error);
     } finally {
       setLoading(false);
     }

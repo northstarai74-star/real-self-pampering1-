@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { BadgeCheck, LayoutDashboard, LogOut } from "lucide-react";
+import { BadgeCheck, LayoutDashboard, LogOut, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { site } from "@/lib/site";
 import { Button } from "@/components/ui/button";
@@ -8,10 +8,11 @@ import { Toaster } from "@/components/ui/sonner";
 import { AdminLogin } from "@/components/admin/AdminLogin";
 import { AdminOverview } from "@/components/admin/AdminOverview";
 import { AdminCertificates } from "@/components/admin/AdminCertificates";
+import { AdminQueries } from "@/components/admin/AdminQueries";
 
 const SESSION_KEY = "sp_admin_password";
 
-type Tab = "overview" | "certificates";
+type Tab = "overview" | "certificates" | "queries";
 
 export function AdminApp() {
   const [password, setPassword] = useState<string | null>(null);
@@ -85,6 +86,12 @@ export function AdminApp() {
             icon={<BadgeCheck className="size-4" />}
             label="Certificates"
           />
+          <TabButton
+            active={tab === "queries"}
+            onClick={() => setTab("queries")}
+            icon={<MessageSquare className="size-4" />}
+            label="Queries"
+          />
         </nav>
       </header>
 
@@ -96,8 +103,10 @@ export function AdminApp() {
               onManageCertificates={() => setTab("certificates")}
               onUnauthorized={onLogout}
             />
-          ) : (
+          ) : tab === "certificates" ? (
             <AdminCertificates password={password} onUnauthorized={onLogout} />
+          ) : (
+            <AdminQueries password={password} onUnauthorized={onLogout} />
           )}
         </div>
       </main>
