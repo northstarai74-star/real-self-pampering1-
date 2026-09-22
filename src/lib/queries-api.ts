@@ -1,64 +1,18 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getAdminPassword } from "./admin-auth.server";
+import { supabase, type CustomerQuery } from "./supabase.server";
 
-interface CustomerQuery {
-  id: string;
-  name: string;
-  email: string;
-  phone?: string;
-  message: string;
-  date: string;
-}
-
-// In-memory storage for development/demo
+// In-memory fallback storage
 const queriesStore: Map<string, CustomerQuery[]> = new Map();
 queriesStore.set("queries", []);
 
-function getQueries(): CustomerQuery[] {
+function getFallbackQueries(): CustomerQuery[] {
   return queriesStore.get("queries") || [];
 }
 
-function setQueries(queries: CustomerQuery[]) {
+function setFallbackQueries(queries: CustomerQuery[]) {
   queriesStore.set("queries", queries);
-
-  // Also try to persist to file system if available
-  try {
-    if (typeof require !== "undefined") {
-      const fs = require("fs");
-      const path = require("path");
-      const dataDir = path.join(process.cwd(), ".data");
-      if (!fs.existsSync(dataDir)) {
-        fs.mkdirSync(dataDir, { recursive: true });
-      }
-      const filePath = path.join(dataDir, "queries.json");
-      fs.writeFileSync(filePath, JSON.stringify(queries, null, 2));
-    }
-  } catch (error) {
-    console.warn("Could not persist queries to file:", error);
-    // Continue with in-memory storage
-  }
 }
-
-// Try to load from file system if available
-function loadPersistedQueries() {
-  try {
-    if (typeof require !== "undefined") {
-      const fs = require("fs");
-      const path = require("path");
-      const filePath = path.join(process.cwd(), ".data", "queries.json");
-      if (fs.existsSync(filePath)) {
-        const data = fs.readFileSync(filePath, "utf-8");
-        const queries = JSON.parse(data);
-        queriesStore.set("queries", queries);
-      }
-    }
-  } catch (error) {
-    console.warn("Could not load persisted queries:", error);
-  }
-}
-
-// Load on startup
-loadPersistedQueries();
 
 export const submitCustomerQuery = createServerFn({ method: "POST" })
   .validator((data: unknown) => {
@@ -70,19 +24,39 @@ export const submitCustomerQuery = createServerFn({ method: "POST" })
   })
   .handler(async (data) => {
     try {
-      const queries = getQueries();
-      const newQuery: CustomerQuery = {
-        id: Date.now().toString(),
+      const cleanData = {
         name: data.name.trim(),
         email: data.email.trim(),
-        phone: data.phone?.trim() || undefined,
+        phone: data.phone?.trim() || null,
         message: data.message.trim(),
-        date: new Date().toISOString(),
       };
-      queries.push(newQuery);
-      setQueries(queries);
-      console.log("Query saved:", newQuery);
-      return { ok: true };
+
+      if (supabase) {
+        // Use Supabase
+        const { error } = await supabase
+          .from("customer_queries")
+          .insert([cleanData]);
+
+        if (error) {
+          console.error("Supabase error:", error);
+          throw error;
+        }
+
+        console.log("Query saved to Supabase:", cleanData);
+        return { ok: true };
+      } else {
+        // Fallback to in-memory storage
+        const queries = getFallbackQueries();
+        const newQuery: CustomerQuery = {
+          id: Date.now().toString(),
+          ...cleanData,
+          created_at: new Date().toISOString(),
+        };
+        queries.push(newQuery);
+        setFallbackQueries(queries);
+        console.log("Query saved to fallback storage:", newQuery);
+        return { ok: true };
+      }
     } catch (error) {
       console.error("Error submitting query:", error);
       return { ok: false };
@@ -99,10 +73,26 @@ export const getCustomerQueries = createServerFn({ method: "GET" })
   })
   .handler(async () => {
     try {
-      return getQueries();
+      if (supabase) {
+        // Fetch from Supabase
+        const { data, error } = await supabase
+          .from("customer_queries")
+          .select("*")
+          .order("created_at", { ascending: false });
+
+        if (error) {
+          console.error("Supabase error:", error);
+          return getFallbackQueries();
+        }
+
+        return data || [];
+      } else {
+        // Use fallback storage
+        return getFallbackQueries();
+      }
     } catch (error) {
       console.error("Error fetching queries:", error);
-      return [];
+      return getFallbackQueries();
     }
   });
 
@@ -119,10 +109,26 @@ export const deleteCustomerQuery = createServerFn({ method: "POST" })
   })
   .handler(async (data) => {
     try {
-      const queries = getQueries();
-      const filtered = queries.filter((q) => q.id !== data.id);
-      setQueries(filtered);
-      return { ok: true };
+      if (supabase) {
+        // Delete from Supabase
+        const { error } = await supabase
+          .from("customer_queries")
+          .delete()
+          .eq("id", data.id);
+
+        if (error) {
+          console.error("Supabase error:", error);
+          throw error;
+        }
+
+        return { ok: true };
+      } else {
+        // Delete from fallback storage
+        const queries = getFallbackQueries();
+        const filtered = queries.filter((q) => q.id !== data.id);
+        setFallbackQueries(filtered);
+        return { ok: true };
+      }
     } catch (error) {
       console.error("Error deleting query:", error);
       return { ok: false };
