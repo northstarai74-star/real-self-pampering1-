@@ -8,9 +8,15 @@ interface CustomerQuery {
   id: string;
   name: string;
   email: string;
-  phone?: string;
+  phone: string | null;
   message: string;
-  date: string;
+  created_at: string;
+}
+
+function formatDate(value: string | undefined) {
+  if (!value) return "";
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? "" : parsed.toLocaleString();
 }
 
 export function AdminQueries({ password, onUnauthorized }: { password: string; onUnauthorized: () => void }) {
@@ -24,10 +30,10 @@ export function AdminQueries({ password, onUnauthorized }: { password: string; o
   const loadQueries = async () => {
     try {
       setLoading(true);
-      const data = await getCustomerQueries({ password });
+      const data = await getCustomerQueries({ data: { password } });
       setQueries(Array.isArray(data) ? data : []);
     } catch (error) {
-      if ((error as Error).message === "Unauthorized") {
+      if ((error as Error).message?.includes("Unauthorized")) {
         onUnauthorized();
       } else {
         toast.error("Could not load queries");
@@ -42,7 +48,7 @@ export function AdminQueries({ password, onUnauthorized }: { password: string; o
     if (!confirm("Delete this query?")) return;
 
     try {
-      const result = await deleteCustomerQuery({ id, password });
+      const result = await deleteCustomerQuery({ data: { id, password } });
       if (result.ok) {
         setQueries(queries.filter((q) => q.id !== id));
         toast.success("Query deleted");
@@ -50,7 +56,7 @@ export function AdminQueries({ password, onUnauthorized }: { password: string; o
         toast.error("Could not delete query");
       }
     } catch (error) {
-      if ((error as Error).message === "Unauthorized") {
+      if ((error as Error).message?.includes("Unauthorized")) {
         onUnauthorized();
       } else {
         toast.error("Could not delete query");
@@ -101,7 +107,7 @@ export function AdminQueries({ password, onUnauthorized }: { password: string; o
                   </div>
                   <p className="mt-4 whitespace-pre-wrap text-ink/80">{query.message}</p>
                   <p className="mt-4 text-xs text-muted-foreground">
-                    {new Date(query.date).toLocaleString()}
+                    {formatDate(query.created_at)}
                   </p>
                 </div>
                 <Button

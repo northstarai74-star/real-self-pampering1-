@@ -20,7 +20,7 @@ export function Contact() {
     }
     setLoading(true);
     try {
-      const result = await submitCustomerQuery(formData);
+      const result = await submitCustomerQuery({ data: formData });
       if (result.ok) {
         toast.success("Thank you! We'll get back to you soon.");
         setFormData({ name: "", email: "", phone: "", message: "" });
