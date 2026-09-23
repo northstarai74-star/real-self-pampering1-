@@ -2,16 +2,7 @@ import { useEffect, useState } from "react";
 import { Trash2, Mail, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { getCustomerQueries, deleteCustomerQuery } from "@/lib/queries-api";
-
-interface CustomerQuery {
-  id: string;
-  name: string;
-  email: string;
-  phone?: string;
-  message: string;
-  date: string;
-}
+import { getCustomerQueries, deleteCustomerQuery, type CustomerQuery } from "@/lib/queries-api";
 
 export function AdminQueries({ password, onUnauthorized }: { password: string; onUnauthorized: () => void }) {
   const [queries, setQueries] = useState<CustomerQuery[]>([]);
@@ -24,7 +15,7 @@ export function AdminQueries({ password, onUnauthorized }: { password: string; o
   const loadQueries = async () => {
     try {
       setLoading(true);
-      const data = await getCustomerQueries({ password });
+      const data = await getCustomerQueries({ data: { password } });
       setQueries(Array.isArray(data) ? data : []);
     } catch (error) {
       if ((error as Error).message === "Unauthorized") {
@@ -42,13 +33,9 @@ export function AdminQueries({ password, onUnauthorized }: { password: string; o
     if (!confirm("Delete this query?")) return;
 
     try {
-      const result = await deleteCustomerQuery({ id, password });
-      if (result.ok) {
-        setQueries(queries.filter((q) => q.id !== id));
-        toast.success("Query deleted");
-      } else {
-        toast.error("Could not delete query");
-      }
+      await deleteCustomerQuery({ data: { id, password } });
+      setQueries((current) => current.filter((q) => q.id !== id));
+      toast.success("Query deleted");
     } catch (error) {
       if ((error as Error).message === "Unauthorized") {
         onUnauthorized();
@@ -101,7 +88,7 @@ export function AdminQueries({ password, onUnauthorized }: { password: string; o
                   </div>
                   <p className="mt-4 whitespace-pre-wrap text-ink/80">{query.message}</p>
                   <p className="mt-4 text-xs text-muted-foreground">
-                    {new Date(query.date).toLocaleString()}
+                    {new Date(query.created_at).toLocaleString()}
                   </p>
                 </div>
                 <Button

@@ -14,22 +14,37 @@ export function Contact() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name.trim() || !formData.email.trim() || !formData.message.trim()) {
-      toast.error("Please fill in all required fields");
+    if (loading) return;
+
+    const trimmed = {
+      name: formData.name.trim(),
+      email: formData.email.trim(),
+      phone: formData.phone.trim(),
+      message: formData.message.trim(),
+    };
+
+    if (!trimmed.name || !trimmed.email || !trimmed.message) {
+      toast.error("Please fill in all required fields.");
       return;
     }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed.email)) {
+      toast.error("Please enter a valid email address.");
+      return;
+    }
+
     setLoading(true);
     try {
-      const result = await submitCustomerQuery(formData);
+      // TanStack Start server functions take their payload under `data`.
+      const result = await submitCustomerQuery({ data: trimmed });
       if (result.ok) {
         toast.success("Thank you! We'll get back to you soon.");
         setFormData({ name: "", email: "", phone: "", message: "" });
       } else {
-        toast.error("Failed to send message. Please try again.");
+        toast.error(result.error);
       }
     } catch (error) {
-      toast.error("Failed to send message. Please try again.");
       console.error(error);
+      toast.error("Failed to send message. Please try again.");
     } finally {
       setLoading(false);
     }

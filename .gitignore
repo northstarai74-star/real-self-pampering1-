@@ -31,3 +31,6 @@ dist-ssr
 *.sln
 *.sw?
 .env.local
+
+# Local contact-form messages written by the dev fallback store
+data/queries.json

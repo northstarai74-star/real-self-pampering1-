@@ -1,136 +1,60 @@
 import { createServerFn } from "@tanstack/react-start";
-import { getAdminPassword } from "./admin-auth.server";
-import { supabase, type CustomerQuery } from "./supabase.server";
+import { z } from "zod";
 
-// In-memory fallback storage
-const queriesStore: Map<string, CustomerQuery[]> = new Map();
-queriesStore.set("queries", []);
+import { isValidAdminPassword } from "@/lib/admin-auth.server";
+import { addQuery, listQueries, removeQuery, type CustomerQuery } from "@/lib/queries-store.server";
 
-function getFallbackQueries(): CustomerQuery[] {
-  return queriesStore.get("queries") || [];
+export type { CustomerQuery };
+
+function requireAdmin(password: string) {
+  if (!isValidAdminPassword(password)) throw new Error("Unauthorized");
 }
 
-function setFallbackQueries(queries: CustomerQuery[]) {
-  queriesStore.set("queries", queries);
-}
+// Public — used by the site's contact form.
+const submitSchema = z.object({
+  name: z.string().trim().nonempty("Please enter your name.").max(80),
+  email: z.string().trim().email("Please enter a valid email address.").max(120),
+  phone: z.string().trim().max(40).optional().or(z.literal("")),
+  message: z.string().trim().nonempty("Please enter a message.").max(2000),
+});
+
+export type SubmitQueryInput = z.input<typeof submitSchema>;
+export type SubmitQueryResult = { ok: true } | { ok: false; error: string };
 
 export const submitCustomerQuery = createServerFn({ method: "POST" })
-  .validator((data: unknown) => {
-    const d = data as { name: string; email: string; phone?: string; message: string };
-    if (!d.name?.trim() || !d.email?.trim() || !d.message?.trim()) {
-      throw new Error("Invalid query data");
-    }
-    return d;
-  })
-  .handler(async (data) => {
+  .validator((input: SubmitQueryInput) => submitSchema.parse(input))
+  .handler(async ({ data }): Promise<SubmitQueryResult> => {
     try {
-      const cleanData = {
-        name: data.name.trim(),
-        email: data.email.trim(),
+      await addQuery({
+        name: data.name,
+        email: data.email,
         phone: data.phone?.trim() || null,
-        message: data.message.trim(),
-      };
-
-      if (supabase) {
-        // Use Supabase
-        const { error } = await supabase
-          .from("customer_queries")
-          .insert([cleanData]);
-
-        if (error) {
-          console.error("Supabase error:", error);
-          throw error;
-        }
-
-        console.log("Query saved to Supabase:", cleanData);
-        return { ok: true };
-      } else {
-        // Fallback to in-memory storage
-        const queries = getFallbackQueries();
-        const newQuery: CustomerQuery = {
-          id: Date.now().toString(),
-          ...cleanData,
-          created_at: new Date().toISOString(),
-        };
-        queries.push(newQuery);
-        setFallbackQueries(queries);
-        console.log("Query saved to fallback storage:", newQuery);
-        return { ok: true };
-      }
+        message: data.message,
+      });
+      return { ok: true };
     } catch (error) {
       console.error("Error submitting query:", error);
-      return { ok: false };
+      return { ok: false, error: "We could not save your message. Please try again." };
     }
   });
 
-export const getCustomerQueries = createServerFn({ method: "GET" })
-  .validator((data: unknown) => {
-    const d = data as { password: string };
-    if (d.password !== getAdminPassword()) {
-      throw new Error("Unauthorized");
-    }
-    return d;
-  })
-  .handler(async () => {
-    try {
-      if (supabase) {
-        // Fetch from Supabase
-        const { data, error } = await supabase
-          .from("customer_queries")
-          .select("*")
-          .order("created_at", { ascending: false });
+// --- Admin-only below: every call re-checks the password server-side. ---
 
-        if (error) {
-          console.error("Supabase error:", error);
-          return getFallbackQueries();
-        }
+const listSchema = z.object({ password: z.string() });
 
-        return data || [];
-      } else {
-        // Use fallback storage
-        return getFallbackQueries();
-      }
-    } catch (error) {
-      console.error("Error fetching queries:", error);
-      return getFallbackQueries();
-    }
+export const getCustomerQueries = createServerFn({ method: "POST" })
+  .validator((input: z.infer<typeof listSchema>) => listSchema.parse(input))
+  .handler(async ({ data }): Promise<CustomerQuery[]> => {
+    requireAdmin(data.password);
+    return listQueries();
   });
+
+const deleteSchema = z.object({ password: z.string(), id: z.string().nonempty() });
 
 export const deleteCustomerQuery = createServerFn({ method: "POST" })
-  .validator((data: unknown) => {
-    const d = data as { id: string; password: string };
-    if (d.password !== getAdminPassword()) {
-      throw new Error("Unauthorized");
-    }
-    if (!d.id) {
-      throw new Error("Invalid query id");
-    }
-    return d;
-  })
-  .handler(async (data) => {
-    try {
-      if (supabase) {
-        // Delete from Supabase
-        const { error } = await supabase
-          .from("customer_queries")
-          .delete()
-          .eq("id", data.id);
-
-        if (error) {
-          console.error("Supabase error:", error);
-          throw error;
-        }
-
-        return { ok: true };
-      } else {
-        // Delete from fallback storage
-        const queries = getFallbackQueries();
-        const filtered = queries.filter((q) => q.id !== data.id);
-        setFallbackQueries(filtered);
-        return { ok: true };
-      }
-    } catch (error) {
-      console.error("Error deleting query:", error);
-      return { ok: false };
-    }
+  .validator((input: z.infer<typeof deleteSchema>) => deleteSchema.parse(input))
+  .handler(async ({ data }) => {
+    requireAdmin(data.password);
+    await removeQuery(data.id);
+    return { ok: true as const };
   });
