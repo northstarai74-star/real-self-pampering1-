@@ -29,16 +29,16 @@ export function Hero() {
           <p className="mt-6 max-w-md text-base leading-relaxed text-ink/75 md:text-lg">
             Thoughtfully designed nails for those who appreciate the details.
           </p>
-          <div className="mt-10 flex flex-wrap items-center gap-x-8 gap-y-4">
+          <div className="mt-10 flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-4 sm:gap-x-8 sm:gap-y-4">
             <a
               href="#verify"
-              className="label-xs border border-plum bg-plum px-8 py-4 text-primary-foreground transition-colors duration-300 hover:bg-ink"
+              className="label-xs border border-plum bg-plum px-6 sm:px-8 py-3 sm:py-4 text-primary-foreground transition-colors duration-300 hover:bg-ink text-center sm:text-left"
             >
               Verify a Certificate
             </a>
             <a
               href="#gallery"
-              className="label-xs border-b border-ink/30 pb-1 text-ink transition-colors duration-300 hover:border-gold hover:text-plum"
+              className="label-xs border-b border-ink/30 pb-1 text-ink transition-colors duration-300 hover:border-gold hover:text-plum text-center sm:text-left"
             >
               Explore Our Work
             </a>

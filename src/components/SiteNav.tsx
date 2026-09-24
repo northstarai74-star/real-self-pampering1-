@@ -43,11 +43,11 @@ export function SiteNav() {
         <a
           href="#top"
           className={cn(
-            "flex items-baseline gap-2 transition-colors",
+            "flex flex-col sm:flex-row sm:items-baseline sm:gap-2 transition-colors",
             solid ? "text-plum" : "text-ink",
           )}
         >
-          <span className="font-display text-lg tracking-tight md:text-xl">{site.name}</span>
+          <span className="font-display text-base sm:text-lg md:text-xl tracking-tight">{site.name}</span>
           <span className="label-xs hidden text-gold sm:inline">{site.tagline}</span>
         </a>
 
@@ -66,18 +66,19 @@ export function SiteNav() {
           ))}
         </nav>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <a
             href="/admin"
-            className="label-xs border border-gold bg-gold px-3 py-2 text-ink transition-colors duration-300 hover:bg-plum hover:text-primary-foreground sm:px-4 sm:py-3 md:px-6"
+            className="label-xs border border-gold bg-gold px-3 py-2.5 text-ink transition-colors duration-300 hover:bg-plum hover:text-primary-foreground sm:px-4 sm:py-3 md:px-6 whitespace-nowrap"
           >
             Admin
           </a>
           <a
             href="#verify"
-            className="label-xs border border-plum bg-plum px-4 py-3 text-primary-foreground transition-colors duration-300 hover:bg-ink md:px-6"
+            className="label-xs border border-plum bg-plum px-3 py-2.5 text-primary-foreground transition-colors duration-300 hover:bg-ink sm:px-4 sm:py-3 md:px-6 whitespace-nowrap"
           >
-            Verify Certificate
+            Verify
+            <span className="hidden sm:inline"> Certificate</span>
           </a>
           <button
             type="button"
