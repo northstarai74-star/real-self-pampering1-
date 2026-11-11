@@ -28,14 +28,13 @@ import {
   type Certificate,
 } from "@/lib/certificates-api";
 
-type FormFields = Omit<Certificate, "id">;
+type FormFields = Omit<Certificate, "id" | "expires">;
 
 const emptyForm: FormFields = {
   number: "",
   holder: "",
   course: "",
   issued: "",
-  expires: "",
   level: "",
 };
 
@@ -82,8 +81,13 @@ export function AdminCertificates({
 
   const openEdit = (certificate: Certificate) => {
     setEditing(certificate);
-    const { id: _id, ...fields } = certificate;
-    setForm(fields);
+    setForm({
+      number: certificate.number,
+      holder: certificate.holder,
+      course: certificate.course,
+      issued: certificate.issued,
+      level: certificate.level,
+    });
     setDialogOpen(true);
   };
 
@@ -98,7 +102,6 @@ export function AdminCertificates({
       holder: form.holder.trim(),
       course: form.course.trim(),
       issued: form.issued.trim(),
-      expires: form.expires.trim(),
       level: form.level.trim(),
     };
     if (Object.values(trimmed).some((v) => !v)) {
@@ -112,7 +115,9 @@ export function AdminCertificates({
         const updated = await adminUpdateCertificate({
           data: { password, id: editing.id, certificate: trimmed },
         });
-        setCertificates((list) => (list ? list.map((c) => (c.id === updated.id ? updated : c)) : list));
+        setCertificates((list) =>
+          list ? list.map((c) => (c.id === updated.id ? updated : c)) : list,
+        );
         toast.success(`Updated certificate ${updated.number}.`);
       } else {
         const created = await adminAddCertificate({ data: { password, certificate: trimmed } });
@@ -128,7 +133,8 @@ export function AdminCertificates({
   };
 
   const onDelete = async (certificate: Certificate) => {
-    if (!window.confirm(`Delete certificate ${certificate.number} for ${certificate.holder}?`)) return;
+    if (!window.confirm(`Delete certificate ${certificate.number} for ${certificate.holder}?`))
+      return;
     setDeletingId(certificate.id);
     try {
       await adminDeleteCertificate({ data: { password, id: certificate.id } });
@@ -150,8 +156,12 @@ export function AdminCertificates({
             What clients see when they verify a certificate on the live site.
           </p>
         </div>
-        <Button onClick={openAdd} className="group transition-transform duration-200 active:scale-95">
-          <Plus className="size-4 transition-transform duration-300 group-hover:rotate-90" /> Add certificate
+        <Button
+          onClick={openAdd}
+          className="group transition-transform duration-200 active:scale-95"
+        >
+          <Plus className="size-4 transition-transform duration-300 group-hover:rotate-90" /> Add
+          certificate
         </Button>
       </div>
 
@@ -194,7 +204,7 @@ export function AdminCertificates({
                       </TableCell>
                       <TableCell>{c.level}</TableCell>
                       <TableCell className="whitespace-nowrap">{c.issued}</TableCell>
-                      <TableCell className="whitespace-nowrap">{c.expires}</TableCell>
+                      <TableCell className="whitespace-nowrap">{c.expires ?? "—"}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
                           <Button
@@ -271,7 +281,7 @@ export function AdminCertificates({
                   <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
                     <span>Level: {c.level}</span>
                     <span>Issued: {c.issued}</span>
-                    <span>Expires: {c.expires}</span>
+                    {c.expires && <span>Expires: {c.expires}</span>}
                   </div>
                 </li>
               ))}
@@ -291,8 +301,18 @@ export function AdminCertificates({
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={onSubmit} className="grid gap-4 sm:grid-cols-2">
-            <Field label="Certificate number" value={form.number} onChange={onFieldChange("number")} placeholder="SP-2026-0102" />
-            <Field label="Holder name" value={form.holder} onChange={onFieldChange("holder")} placeholder="Jane Doe" />
+            <Field
+              label="Certificate number"
+              value={form.number}
+              onChange={onFieldChange("number")}
+              placeholder="SP-2026-0102"
+            />
+            <Field
+              label="Holder name"
+              value={form.holder}
+              onChange={onFieldChange("holder")}
+              placeholder="Jane Doe"
+            />
             <Field
               label="Course / training"
               value={form.course}
@@ -300,9 +320,18 @@ export function AdminCertificates({
               placeholder="Gel Manicure & Nail Preparation"
               className="sm:col-span-2"
             />
-            <Field label="Level" value={form.level} onChange={onFieldChange("level")} placeholder="Foundation" />
-            <Field label="Issued" value={form.issued} onChange={onFieldChange("issued")} placeholder="18 March 2024" />
-            <Field label="Expires" value={form.expires} onChange={onFieldChange("expires")} placeholder="18 March 2027" />
+            <Field
+              label="Level"
+              value={form.level}
+              onChange={onFieldChange("level")}
+              placeholder="Foundation"
+            />
+            <Field
+              label="Issued"
+              value={form.issued}
+              onChange={onFieldChange("issued")}
+              placeholder="18 March 2024"
+            />
             <DialogFooter className="sm:col-span-2">
               <Button
                 type="button"
@@ -312,7 +341,11 @@ export function AdminCertificates({
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={saving} className="transition-transform duration-150 active:scale-95">
+              <Button
+                type="submit"
+                disabled={saving}
+                className="transition-transform duration-150 active:scale-95"
+              >
                 {saving && <Loader2 className="size-4 animate-spin" />}
                 {editing ? "Save changes" : "Add certificate"}
               </Button>

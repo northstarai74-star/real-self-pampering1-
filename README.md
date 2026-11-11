@@ -11,7 +11,6 @@ The certificate register is stored in Airtable. Create a table named
 - `Holder`
 - `Course`
 - `Issued`
-- `Expires`
 - `Level`
 
 Create an Airtable personal access token with record read/write access to the
@@ -20,6 +19,9 @@ base, then configure these server-side environment variables:
 - `AIRTABLE_PERSONAL_ACCESS_TOKEN`
 - `AIRTABLE_BASE_ID`
 - `AIRTABLE_TABLE_NAME` (optional; defaults to `Certificates`)
+
+New certificates no longer ask for an expiry date. An existing `Expires` column
+and values are still preserved and shown when present.
 
 ### Supabase customer inquiries
 

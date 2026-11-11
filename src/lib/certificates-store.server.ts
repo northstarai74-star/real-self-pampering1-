@@ -5,11 +5,10 @@ export type CertificateFields = {
   holder: string;
   course: string;
   issued: string;
-  expires: string;
   level: string;
 };
 
-export type Certificate = CertificateFields & { id: string };
+export type Certificate = CertificateFields & { id: string; expires?: string };
 
 export type VerificationResult =
   | { status: "valid"; certificate: Certificate }
@@ -22,9 +21,9 @@ const FIELD_NAMES = {
   holder: "Holder",
   course: "Course",
   issued: "Issued",
-  expires: "Expires",
   level: "Level",
 } as const;
+const LEGACY_EXPIRES_FIELD = "Expires";
 
 function getAirtableConfig() {
   const token = process.env["AIRTABLE_PERSONAL_ACCESS_TOKEN"]?.trim();
@@ -105,15 +104,17 @@ function toCertificate(value: unknown): Certificate {
     return value;
   };
 
-  return {
+  const certificate: Certificate = {
     id: record["id"],
     number: getField("number"),
     holder: getField("holder"),
     course: getField("course"),
     issued: getField("issued"),
-    expires: getField("expires"),
     level: getField("level"),
   };
+  const expires = fields[LEGACY_EXPIRES_FIELD];
+  if (typeof expires === "string") certificate.expires = expires;
+  return certificate;
 }
 
 function toAirtableFields(certificate: CertificateFields) {
@@ -122,7 +123,6 @@ function toAirtableFields(certificate: CertificateFields) {
     [FIELD_NAMES.holder]: certificate.holder,
     [FIELD_NAMES.course]: certificate.course,
     [FIELD_NAMES.issued]: certificate.issued,
-    [FIELD_NAMES.expires]: certificate.expires,
     [FIELD_NAMES.level]: certificate.level,
   };
 }

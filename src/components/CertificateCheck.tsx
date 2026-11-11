@@ -65,13 +65,17 @@ export function CertificateCheck() {
             record exists in our register.
           </p>
           <p className="mt-6 max-w-md text-sm text-muted-foreground">
-            Capitalisation, extra spaces and dashes do not matter. If the details do not match, check
-            the number against the printed certificate before contacting the studio.
+            Capitalisation, extra spaces and dashes do not matter. If the details do not match,
+            check the number against the printed certificate before contacting the studio.
           </p>
         </Reveal>
 
         <Reveal delay={120}>
-          <form onSubmit={onSubmit} noValidate className="border border-border bg-background p-6 md:p-10">
+          <form
+            onSubmit={onSubmit}
+            noValidate
+            className="border border-border bg-background p-6 md:p-10"
+          >
             <div className="grid gap-6 sm:grid-cols-2">
               <div>
                 <label htmlFor="cert-number" className="label-xs text-ink/70">
@@ -143,7 +147,9 @@ export function CertificateCheck() {
                     <Field label="Training" value={result.certificate.course} />
                     <Field label="Level" value={result.certificate.level} />
                     <Field label="Issued" value={result.certificate.issued} />
-                    <Field label="Valid until" value={result.certificate.expires} />
+                    {result.certificate.expires && (
+                      <Field label="Valid until" value={result.certificate.expires} />
+                    )}
                   </dl>
                 </div>
               )}

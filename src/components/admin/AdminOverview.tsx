@@ -29,6 +29,7 @@ export function AdminOverview({
         const horizon = now + EXPIRING_WITHIN_DAYS * 24 * 60 * 60 * 1000;
         setExpiringSoon(
           list.filter((c) => {
+            if (!c.expires) return false;
             const t = new Date(c.expires).getTime();
             return !Number.isNaN(t) && t >= now && t <= horizon;
           }).length,
@@ -96,14 +97,11 @@ export function AdminOverview({
             <Row label="Address" value={site.address.join(", ")} />
             <Row label="Phone" value={site.phone} />
             <Row label="Email" value={site.email} />
-            <Row
-              label="Hours"
-              value={site.hours.map((h) => `${h.days}: ${h.time}`).join(" · ")}
-            />
+            <Row label="Hours" value={site.hours.map((h) => `${h.days}: ${h.time}`).join(" · ")} />
           </dl>
           <p className="mt-5 text-xs leading-relaxed text-muted-foreground">
-            These come from <code className="rounded bg-muted px-1 py-0.5">src/lib/site.ts</code>{" "}
-            — editing that file updates the nav, footer and contact section together.
+            These come from <code className="rounded bg-muted px-1 py-0.5">src/lib/site.ts</code> —
+            editing that file updates the nav, footer and contact section together.
           </p>
         </section>
 
@@ -180,13 +178,18 @@ function StatCard({
     >
       <div
         className={
-          tone === "warning" ? "flex items-center gap-2 text-amber-600" : "flex items-center gap-2 text-plum"
+          tone === "warning"
+            ? "flex items-center gap-2 text-amber-600"
+            : "flex items-center gap-2 text-plum"
         }
       >
         <span className="transition-transform duration-300 group-hover:scale-110">{icon}</span>
         <span className="label-xs">{label}</span>
       </div>
-      <p key={value ?? "pending"} className="mt-4 animate-in fade-in font-display text-3xl text-ink duration-300">
+      <p
+        key={value ?? "pending"}
+        className="mt-4 animate-in fade-in font-display text-3xl text-ink duration-300"
+      >
         {value ?? "—"}
       </p>
       {action && (

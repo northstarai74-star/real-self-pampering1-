@@ -29,7 +29,6 @@ const certificateFieldsSchema = z.object({
   holder: z.string().trim().nonempty().max(80),
   course: z.string().trim().nonempty().max(120),
   issued: z.string().trim().nonempty().max(40),
-  expires: z.string().trim().nonempty().max(40),
   level: z.string().trim().nonempty().max(40),
 });
 
