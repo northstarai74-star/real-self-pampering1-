@@ -96,12 +96,12 @@ function toCertificate(value: unknown): Certificate {
 
   const getField = (key: keyof typeof FIELD_NAMES): string => {
     const value = fields[FIELD_NAMES[key]];
-    if (typeof value !== "string") {
-      throw new Error(
-        `Airtable record ${record["id"]} is missing the "${FIELD_NAMES[key]}" text field.`,
-      );
-    }
-    return value;
+    if (value === undefined || value === null) return "";
+    if (typeof value === "string") return value;
+    if (typeof value === "number" && Number.isFinite(value)) return String(value);
+    throw new Error(
+      `Airtable field "${FIELD_NAMES[key]}" on record ${record["id"]} must contain text or a number.`,
+    );
   };
 
   const certificate: Certificate = {

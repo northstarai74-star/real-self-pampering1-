@@ -56,7 +56,22 @@ export function AdminCertificates({
   const load = () => {
     setLoading(true);
     adminListCertificates({ data: { password } })
-      .then(setCertificates)
+      .then((list) => {
+        setCertificates(list);
+        const incompleteCount = list.filter(
+          (certificate) =>
+            !certificate.number.trim() ||
+            !certificate.holder.trim() ||
+            !certificate.course.trim() ||
+            !certificate.issued.trim() ||
+            !certificate.level.trim(),
+        ).length;
+        if (incompleteCount > 0) {
+          toast.warning(
+            `${incompleteCount} Airtable record(s) have missing required values. Check their cells and column names.`,
+          );
+        }
+      })
       .catch((error: unknown) => handleError(error))
       .finally(() => setLoading(false));
   };
@@ -197,13 +212,13 @@ export function AdminCertificates({
                       className="animate-in fade-in slide-in-from-bottom-1 fill-mode-both duration-300"
                       style={{ animationDelay: `${Math.min(i, 10) * 35}ms` }}
                     >
-                      <TableCell className="font-medium text-ink">{c.number}</TableCell>
-                      <TableCell>{c.holder}</TableCell>
+                      <TableCell className="font-medium text-ink">{c.number || "—"}</TableCell>
+                      <TableCell>{c.holder || "—"}</TableCell>
                       <TableCell className="max-w-56 truncate" title={c.course}>
-                        {c.course}
+                        {c.course || "—"}
                       </TableCell>
-                      <TableCell>{c.level}</TableCell>
-                      <TableCell className="whitespace-nowrap">{c.issued}</TableCell>
+                      <TableCell>{c.level || "—"}</TableCell>
+                      <TableCell className="whitespace-nowrap">{c.issued || "—"}</TableCell>
                       <TableCell className="whitespace-nowrap">{c.expires ?? "—"}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
@@ -248,8 +263,8 @@ export function AdminCertificates({
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="font-medium text-ink">{c.number}</p>
-                      <p className="mt-0.5 text-sm text-ink/80">{c.holder}</p>
+                      <p className="font-medium text-ink">{c.number || "—"}</p>
+                      <p className="mt-0.5 text-sm text-ink/80">{c.holder || "—"}</p>
                     </div>
                     <div className="flex shrink-0 gap-1">
                       <Button
@@ -277,10 +292,10 @@ export function AdminCertificates({
                       </Button>
                     </div>
                   </div>
-                  <p className="mt-2 text-sm text-muted-foreground">{c.course}</p>
+                  <p className="mt-2 text-sm text-muted-foreground">{c.course || "—"}</p>
                   <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                    <span>Level: {c.level}</span>
-                    <span>Issued: {c.issued}</span>
+                    <span>Level: {c.level || "—"}</span>
+                    <span>Issued: {c.issued || "—"}</span>
                     {c.expires && <span>Expires: {c.expires}</span>}
                   </div>
                 </li>
