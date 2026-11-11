@@ -1,15 +1,6 @@
-// Server-only. Reads and writes the certificate register as JSON on disk.
-// Works when this app runs under Node (vite dev / vite preview / a Node server).
-// A serverless/edge deploy target (e.g. Cloudflare Workers) has no filesystem —
-// swap this for a real database (D1, KV, etc.) before deploying there.
+// Server-only Airtable storage. Keep the token out of client code and responses.
 
-import { existsSync } from "node:fs";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { randomUUID } from "node:crypto";
-import path from "node:path";
-
-export type Certificate = {
-  id: string;
+export type CertificateFields = {
   number: string;
   holder: string;
   course: string;
@@ -18,120 +9,178 @@ export type Certificate = {
   level: string;
 };
 
-const DATA_DIR = process.env.NODE_ENV === "production" ? "/tmp/certificates" : path.resolve(process.cwd(), "data");
-const DATA_FILE = path.join(DATA_DIR, "certificates.json");
+export type Certificate = CertificateFields & { id: string };
 
-const SEED_CERTIFICATES: Certificate[] = [
-  {
-    id: "cert-1",
-    number: "SP-2024-0118",
-    holder: "Amara Lindqvist",
-    course: "Gel Manicure & Nail Preparation",
-    issued: "18 March 2024",
-    expires: "18 March 2027",
-    level: "Foundation",
-  },
-  {
-    id: "cert-2",
-    number: "SP-2024-0247",
-    holder: "Noor Haddad",
-    course: "Structured Gel Extensions",
-    issued: "02 June 2024",
-    expires: "02 June 2027",
-    level: "Advanced",
-  },
-  {
-    id: "cert-3",
-    number: "SP-2024-0316",
-    holder: "Elin Vasquez",
-    course: "Editorial Nail Art & Hand Painting",
-    issued: "27 August 2024",
-    expires: "27 August 2027",
-    level: "Advanced",
-  },
-  {
-    id: "cert-4",
-    number: "SP-2025-0032",
-    holder: "Priya Raghavan",
-    course: "Russian Manicure & Cuticle Care",
-    issued: "14 January 2025",
-    expires: "14 January 2028",
-    level: "Specialist",
-  },
-  {
-    id: "cert-5",
-    number: "SP-2025-0104",
-    holder: "Sofia Marchetti",
-    course: "Chrome, Cat-Eye & Reflective Finishes",
-    issued: "09 April 2025",
-    expires: "09 April 2028",
-    level: "Specialist",
-  },
-  {
-    id: "cert-6",
-    number: "SP-2025-0189",
-    holder: "Jade Okonkwo",
-    course: "Bridal Nail Design",
-    issued: "21 May 2025",
-    expires: "21 May 2028",
-    level: "Advanced",
-  },
-  {
-    id: "cert-7",
-    number: "SP-2025-0233",
-    holder: "Camille Rousseau",
-    course: "Pedicure & Foot Care Protocols",
-    issued: "07 July 2025",
-    expires: "07 July 2028",
-    level: "Foundation",
-  },
-  {
-    id: "cert-8",
-    number: "SP-2026-0011",
-    holder: "Mei Tanaka",
-    course: "Master Trainer — Nail Artistry",
-    issued: "12 February 2026",
-    expires: "12 February 2029",
-    level: "Master",
-  },
-];
+export type VerificationResult =
+  | { status: "valid"; certificate: Certificate }
+  | { status: "name_mismatch"; certificate: Certificate }
+  | { status: "not_found" };
 
-async function ensureDataFile(): Promise<void> {
-  if (!existsSync(DATA_DIR)) await mkdir(DATA_DIR, { recursive: true });
-  if (!existsSync(DATA_FILE)) {
-    await writeFile(DATA_FILE, `${JSON.stringify(SEED_CERTIFICATES, null, 2)}\n`, "utf8");
+const AIRTABLE_API_URL = "https://api.airtable.com/v0";
+const FIELD_NAMES = {
+  number: "Certificate Number",
+  holder: "Holder",
+  course: "Course",
+  issued: "Issued",
+  expires: "Expires",
+  level: "Level",
+} as const;
+
+function getAirtableConfig() {
+  const token = process.env["AIRTABLE_PERSONAL_ACCESS_TOKEN"]?.trim();
+  const baseId = process.env["AIRTABLE_BASE_ID"]?.trim();
+  const tableName = process.env["AIRTABLE_TABLE_NAME"]?.trim() || "Certificates";
+
+  if (!token || !baseId) {
+    throw new Error(
+      "Airtable is not configured. Set AIRTABLE_PERSONAL_ACCESS_TOKEN and AIRTABLE_BASE_ID on the server.",
+    );
   }
+
+  return {
+    token,
+    tableUrl: `${AIRTABLE_API_URL}/${encodeURIComponent(baseId)}/${encodeURIComponent(tableName)}`,
+  };
+}
+
+function asObject(value: unknown, description: string): Record<string, unknown> {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    throw new Error(`Airtable returned an invalid ${description}.`);
+  }
+  return value as Record<string, unknown>;
+}
+
+async function airtableRequest(path = "", init: RequestInit = {}): Promise<unknown> {
+  const { token, tableUrl } = getAirtableConfig();
+  const response = await fetch(`${tableUrl}${path}`, {
+    ...init,
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+      ...init.headers,
+    },
+  });
+  const responseText = await response.text();
+  let body: unknown;
+
+  if (responseText) {
+    try {
+      body = JSON.parse(responseText) as unknown;
+    } catch {
+      if (response.ok) throw new Error("Airtable returned an invalid JSON response.");
+    }
+  }
+
+  if (!response.ok) {
+    const error =
+      body && typeof body === "object" ? (body as Record<string, unknown>)["error"] : null;
+    const errorMessage =
+      typeof error === "string"
+        ? error
+        : error && typeof error === "object" && "message" in error
+          ? String(error.message)
+          : responseText;
+    throw new Error(
+      `Airtable request failed (${response.status}): ${errorMessage || response.statusText}`,
+    );
+  }
+
+  if (body === undefined) throw new Error("Airtable returned an empty response.");
+  return body;
+}
+
+function toCertificate(value: unknown): Certificate {
+  const record = asObject(value, "record");
+  if (typeof record["id"] !== "string")
+    throw new Error("Airtable returned a record without an ID.");
+  const fields = asObject(record["fields"], "record fields");
+
+  const getField = (key: keyof typeof FIELD_NAMES): string => {
+    const value = fields[FIELD_NAMES[key]];
+    if (typeof value !== "string") {
+      throw new Error(
+        `Airtable record ${record["id"]} is missing the "${FIELD_NAMES[key]}" text field.`,
+      );
+    }
+    return value;
+  };
+
+  return {
+    id: record["id"],
+    number: getField("number"),
+    holder: getField("holder"),
+    course: getField("course"),
+    issued: getField("issued"),
+    expires: getField("expires"),
+    level: getField("level"),
+  };
+}
+
+function toAirtableFields(certificate: CertificateFields) {
+  return {
+    [FIELD_NAMES.number]: certificate.number,
+    [FIELD_NAMES.holder]: certificate.holder,
+    [FIELD_NAMES.course]: certificate.course,
+    [FIELD_NAMES.issued]: certificate.issued,
+    [FIELD_NAMES.expires]: certificate.expires,
+    [FIELD_NAMES.level]: certificate.level,
+  };
 }
 
 export async function readCertificates(): Promise<Certificate[]> {
-  await ensureDataFile();
-  const raw = await readFile(DATA_FILE, "utf8");
-  try {
-    const parsed = JSON.parse(raw) as unknown;
-    return Array.isArray(parsed) ? (parsed as Certificate[]) : [];
-  } catch {
-    return [];
+  const certificates: Certificate[] = [];
+  let offset: string | undefined;
+
+  do {
+    const query = offset ? `?offset=${encodeURIComponent(offset)}` : "";
+    const result = asObject(await airtableRequest(query), "list response");
+    if (!Array.isArray(result["records"]))
+      throw new Error("Airtable returned an invalid records list.");
+    certificates.push(...result["records"].map(toCertificate));
+    offset = typeof result["offset"] === "string" ? result["offset"] : undefined;
+  } while (offset);
+
+  return certificates;
+}
+
+export async function createCertificate(certificate: CertificateFields): Promise<Certificate> {
+  const result = asObject(
+    await airtableRequest("", {
+      method: "POST",
+      body: JSON.stringify({ records: [{ fields: toAirtableFields(certificate) }] }),
+    }),
+    "create response",
+  );
+  if (!Array.isArray(result["records"]) || result["records"].length !== 1) {
+    throw new Error("Airtable did not return the newly created certificate.");
   }
+  return toCertificate(result["records"][0]);
 }
 
-export async function writeCertificates(list: Certificate[]): Promise<void> {
-  await ensureDataFile();
-  await writeFile(DATA_FILE, `${JSON.stringify(list, null, 2)}\n`, "utf8");
+export async function updateCertificate(
+  id: string,
+  certificate: CertificateFields,
+): Promise<Certificate> {
+  const result = await airtableRequest(`/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    body: JSON.stringify({ fields: toAirtableFields(certificate) }),
+  });
+  return toCertificate(result);
 }
 
-export function createCertificateId(): string {
-  return randomUUID();
+export async function deleteCertificate(id: string): Promise<void> {
+  const result = asObject(
+    await airtableRequest(`/${encodeURIComponent(id)}`, { method: "DELETE" }),
+    "delete response",
+  );
+  if (result["deleted"] !== true)
+    throw new Error("Airtable did not confirm the certificate deletion.");
 }
 
 const normalise = (value: string) =>
   value.trim().toLowerCase().replace(/\s+/g, " ").replace(/[‐-―]/g, "-");
 
 const normaliseNumber = (value: string) => normalise(value).replace(/[\s-]/g, "");
-
-export type VerificationResult =
-  | { status: "valid"; certificate: Certificate }
-  | { status: "name_mismatch"; certificate: Certificate }
-  | { status: "not_found" };
 
 export function matchCertificate(
   list: Certificate[],
@@ -141,7 +190,7 @@ export function matchCertificate(
   const wantedNumber = normaliseNumber(numberInput);
   const wantedName = normalise(nameInput);
 
-  const match = list.find((c) => normaliseNumber(c.number) === wantedNumber);
+  const match = list.find((certificate) => normaliseNumber(certificate.number) === wantedNumber);
   if (!match) return { status: "not_found" };
   if (normalise(match.holder) !== wantedName) {
     return { status: "name_mismatch", certificate: match };

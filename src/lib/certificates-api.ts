@@ -3,10 +3,11 @@ import { z } from "zod";
 
 import { isValidAdminPassword } from "@/lib/admin-auth.server";
 import {
-  createCertificateId,
+  createCertificate,
+  deleteCertificate,
   matchCertificate,
   readCertificates,
-  writeCertificates,
+  updateCertificate,
   type Certificate,
   type VerificationResult,
 } from "@/lib/certificates-store.server";
@@ -73,10 +74,7 @@ export const adminAddCertificate = createServerFn({ method: "POST" })
   .validator((input: z.infer<typeof addSchema>) => addSchema.parse(input))
   .handler(async ({ data }) => {
     requireAdmin(data.password);
-    const list = await readCertificates();
-    const newCertificate: Certificate = { id: createCertificateId(), ...data.certificate };
-    await writeCertificates([...list, newCertificate]);
-    return newCertificate;
+    return createCertificate(data.certificate);
   });
 
 const updateSchema = z.object({
@@ -89,14 +87,7 @@ export const adminUpdateCertificate = createServerFn({ method: "POST" })
   .validator((input: z.infer<typeof updateSchema>) => updateSchema.parse(input))
   .handler(async ({ data }) => {
     requireAdmin(data.password);
-    const list = await readCertificates();
-    const index = list.findIndex((c) => c.id === data.id);
-    if (index === -1) throw new Error("That certificate no longer exists.");
-    const updated: Certificate = { id: data.id, ...data.certificate };
-    const next = [...list];
-    next[index] = updated;
-    await writeCertificates(next);
-    return updated;
+    return updateCertificate(data.id, data.certificate);
   });
 
 const deleteSchema = z.object({ password: z.string(), id: z.string() });
@@ -105,9 +96,6 @@ export const adminDeleteCertificate = createServerFn({ method: "POST" })
   .validator((input: z.infer<typeof deleteSchema>) => deleteSchema.parse(input))
   .handler(async ({ data }) => {
     requireAdmin(data.password);
-    const list = await readCertificates();
-    const next = list.filter((c) => c.id !== data.id);
-    if (next.length === list.length) throw new Error("That certificate no longer exists.");
-    await writeCertificates(next);
+    await deleteCertificate(data.id);
     return { ok: true as const };
   });
